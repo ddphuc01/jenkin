@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    ports:
+      - "8080:8080" # Jenkins UI
+      - "50000:50000" # Jenkins agent
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock # Mount Docker socket
+#    environment:
+#      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    depends_on:
+      - docker-dind
+    networks:
+      - jenkins-net
+    restart: unless-stopped
+
+  docker-dind:
+    image: docker:dind
+    container_name: docker-dind
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    volumes:
+      - docker-certs:/certs
+      - docker-data:/var/lib/docker
+    ports:
+      - "2376:2376"
+    networks:
+      - jenkins-net
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
+  docker-certs:
+  docker-data:
+
+networks:
+  jenkins-net:
+    driver: bridge
